@@ -1,3 +1,6 @@
 # PyConvert
+**Needs help with...**
+  - Design ideas
+  - How to format result as money
 
-A project by Binyamin Green
+![Example Image](./demo.png)

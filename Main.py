@@ -13,7 +13,8 @@ class Gui(Gtk.Window):
         Gtk.Window.__init__(self)
         GLib.set_application_name('PyConvert')
         self.set_title("PyConvert")
-        self.set_default_icon(GdkPixbuf.Pixbuf.new_from_file_at_size('logo.svg', 48, 48))
+        self.set_default_icon_from_file("logo.svg")
+        self.set_border_width(8)
         self.convert_usd = {
             "CAD": {"name": "Canadian Dollar", "rate": 1.33, "prefix": "$"},
             "EUR": {"name": "Euro", "rate": 0.92, "prefix": "€"},
@@ -62,7 +63,7 @@ class Gui(Gtk.Window):
         widget.set_show_close_button(True)
         widget.props.title = self.props.title
 
-        about_icon = Gtk.Button.new_from_icon_name("dialog-information", 2)
+        about_icon = Gtk.Button.new_from_icon_name("help-about", 2)
         about_icon.connect("clicked", self.about_dialog)
         about_icon.set_tooltip_text("About this Program")
         widget.pack_end(about_icon)
@@ -73,6 +74,7 @@ class Gui(Gtk.Window):
         widget = Gtk.AboutDialog()
         widget.set_license_type(7)
         widget.set_version("1.0.0")
+        widget.set_logo(GdkPixbuf.Pixbuf.new_from_file_at_size('logo.svg', 48, 48))
         widget.connect("response", lambda w, b: w.close())
         widget.show()
 
