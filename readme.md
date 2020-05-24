@@ -3,7 +3,6 @@
 <img src="logo.svg" width="48">
 
 **Needs help with...**
-  - store/cache api data, so we can cut down on number of requests
   - new design (see [example][dribbble])
  
 ![Demo](./demo.png)

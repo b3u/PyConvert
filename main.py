@@ -3,14 +3,17 @@ PyConvert v1.0.0
 (c) 2020 Binyamin Green
 """
 
+import json
 import gi
 import requests
 
 gi.require_version("Gtk", "3.0")
-from gi.repository import Gtk, GdkPixbuf, GLib
+
+from gi.repository import Gtk, GdkPixbuf, GLib # pylint: disable=wrong-import-position
 
 
 def show_popover(parent, text):
+    """Show Popup"""
     popover = Gtk.Popover(relative_to=parent)
     popover.set_border_width(4)
     popover.add(Gtk.Label(label=text, visible=True))
@@ -18,7 +21,21 @@ def show_popover(parent, text):
     popover.connect("closed", lambda widget: widget.destroy())
 
 
+def about_dialog(_):
+    """Set-up About Dialog"""
+    widget = Gtk.AboutDialog()
+    widget.set_license_type(Gtk.License.MIT_X11)
+    widget.set_authors(["Binyamin Green https://binyam.in"])
+    widget.set_version("1.0.0")
+    widget.set_website("https://github.com/b3u/pyconvert/")
+    widget.set_website_label("Source Code")
+    widget.set_logo(GdkPixbuf.Pixbuf().new_from_file_at_size('logo.svg', 48, 48))
+    widget.connect("response", lambda w, _: w.close())
+    widget.run()
+
+
 class Gui(Gtk.Window):
+    """User Interface"""
     def __init__(self):
         Gtk.Window.__init__(self)
         GLib.set_application_name('PyConvert')
@@ -31,8 +48,15 @@ class Gui(Gtk.Window):
         self.set_title("PyConvert")
         self.set_border_width(10)
 
-        req = requests.get("https://api.exchangeratesapi.io/latest?base=USD")
-        self.rates: dict = req.json().get("rates")
+        try:
+            # Cache rates
+            self.rates: dict = json.load(open("rates.json"))
+        except FileNotFoundError:
+            # Create file if not found
+            req = requests.get("https://api.exchangeratesapi.io/latest?base=USD")
+            rates = req.json().get("rates")
+            json.dump(rates, open("rates.json", mode="x"))
+            self.rates: dict = rates
 
         self.header_bar()
         # self.set_interactive_debugging(True)
@@ -61,45 +85,38 @@ class Gui(Gtk.Window):
 
         self.add(self.grid)
 
-    def convert(self, _):
+    def convert(self, *_args):
+        """Convert USD"""
         current_input = float(self.entry.get_value())
 
-        # Handle Errors
         if not current_input:
-            return show_popover(self.entry, "Input should be greater than zero")
-        elif not self.dropdown.props.active_id:
-            return show_popover(self.dropdown, "Choose a currency")
-
+            # Handle Error
+            show_popover(self.entry, "Input should be greater than zero")
+            return None
+        if not self.dropdown.get_active_id():
+            # Handle Error
+            show_popover(self.dropdown, "Choose a currency")
+            return None
         # Calculate
-        current_rate = self.rates[self.dropdown.props.active_id]
+        current_rate = self.rates[self.dropdown.get_active_id()]
         amount = round(current_input * current_rate, 2)
         self.output.set_text(format(amount, '.2f'))
 
     def header_bar(self):
+        """Set up title-bar"""
         widget = Gtk.HeaderBar()
         widget.set_show_close_button(True)
-        widget.set_title(self.props.title)
+        widget.set_title(self.get_title())
 
         # Theme should govern whether app icon shows
         # widget.pack_start(Gtk.Image.new_from_pixbuf(self.icon))
 
         about_icon = Gtk.Button().new_from_icon_name("help-about", 2)
-        about_icon.connect("clicked", self.about_dialog)
+        about_icon.connect("clicked", about_dialog)
         about_icon.set_tooltip_text("About this Program")
         widget.pack_end(about_icon)
 
         self.set_titlebar(widget)
-
-    def about_dialog(self, _):
-        widget = Gtk.AboutDialog()
-        widget.set_license_type(Gtk.License.MIT_X11)
-        widget.set_authors(["Binyamin Green https://binyam.in"])
-        widget.set_version("1.0.0")
-        widget.set_website("https://gitlab.com/b3u/pyconvert/")
-        widget.set_website_label("Source Code")
-        widget.set_logo(GdkPixbuf.Pixbuf().new_from_file_at_size('logo.svg', 48, 48))
-        widget.connect("response", lambda w, b: w.close())
-        widget.run()
 
 
 if __name__ == "__main__":
